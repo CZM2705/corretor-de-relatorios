@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corretor de Relatórios - Colégio Santa Úrsula</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .prose-custom {
+            color: #374151; /* gray-700 */
+        }
+        .prose-custom h3 {
+            color: #1F2937; /* gray-800 */
+            font-weight: 600;
+        }
+        .prose-custom ul {
+            list-style-position: inside;
+        }
+        .prose-custom li::marker {
+            color: #4f46e5; /* indigo-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Corretor de Relatórios - Colégio Santa Úrsula</h1>
+            <p class="mt-4 text-lg text-gray-600">Cole o relatório do aluno abaixo e receba sugestões de melhoria instantaneamente.</p>
+        </header>
+
+        <main class="max-w-4xl mx-auto">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                <div class="mb-6">
+                    <label for="report-text" class="block text-lg font-semibold text-gray-700 mb-2">Relatório do Aluno:</label>
+                    <textarea id="report-text" rows="12" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Cole o texto do relatório aqui..."></textarea>
+                </div>
+
+                <div class="text-center">
+                    <button id="analyze-button" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105 duration-300 ease-in-out">
+                        Analisar Relatório
+                    </button>
+                </div>
+            </div>
+
+            <div id="results-container" class="mt-10 bg-white p-6 md:p-8 rounded-2xl shadow-lg" style="display: none;">
+                <div id="loading-indicator" class="text-center" style="display: none;">
+                    <div class="flex justify-center items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-lg font-medium text-gray-600">Analisando... Por favor, aguarde.</span>
+                    </div>
+                </div>
+                <div id="suggestions" class="prose prose-custom max-w-none"></div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 text-gray-500">
+            <p>Desenvolvido com a ajuda da IA do Google.</p>
+        </footer>
+    </div>
+
+    <script>
+        const analyzeButton = document.getElementById('analyze-button');
+        const reportText = document.getElementById('report-text');
+        const resultsContainer = document.getElementById('results-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        analyzeButton.addEventListener('click', async () => {
+            const text = reportText.value.trim();
+            if (!text) {
+                alert('Por favor, insira o texto do relatório para análise.');
+                return;
+            }
+
+            // Show loading indicator and results container
+            resultsContainer.style.display = 'block';
+            loadingIndicator.style.display = 'flex';
+            suggestionsDiv.innerHTML = '';
+
+            const prompt = `
+                Você é um assistente para professores. Analise o seguinte relatório de um aluno e forneça sugestões construtivas.
+                Sua análise deve focar nos seguintes pontos:
+                1.  **Ortografia e Gramática:** Identifique e corrija quaisquer erros.
+                2.  **Pontuação:** Verifique o uso correto de vírgulas, pontos finais, etc.
+                3.  **Tempos Verbais:** Garanta a consistência e o uso adequado dos tempos verbais.
+                4.  **Clareza e Coerência:** Sugira melhorias para tornar o texto mais claro e coeso.
+                5.  **Sugestões Positivas:** Ofereça feedback construtivo e sugestões para enriquecer o relatório.
+
+                Formate a sua resposta usando Markdown. Use títulos para cada seção (ex: ### Ortografia e Gramática).
+
+                Texto para análise:
+                ---
+                ${text}
+                ---
+            `;
+            
+            try {
+                const suggestions = await callGemini(prompt);
+                displaySuggestions(suggestions);
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                suggestionsDiv.innerHTML = '<p class="text-red-500">Desculpe, ocorreu um erro ao analisar o texto. Por favor, tente novamente mais tarde.</p>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        });
+
+        async function callGemini(prompt) {
+            // This is a placeholder for the actual Gemini API call.
+            // In a real application, you would make a fetch request to your backend,
+            // which would then securely call the Gemini API.
+            // For this example, we'll simulate a response.
+            
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // The API key will be provided by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Resposta inválida da API do Gemini.");
+            }
+        }
+        
+        // This is a simple markdown to HTML converter
+        function basicMarkdownToHtml(md) {
+            // Headings
+            md = md.replace(/^### (.*$)/gim, '<h3 class="text-xl font-semibold mb-2 mt-4">$1</h3>');
+            md = md.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mb-3 mt-5">$1</h2>');
+            md = md.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mb-4 mt-6">$1</h1>');
+
+            // Bold
+            md = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Italic
+            md = md.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Unordered lists
+            md = md.replace(/^\* (.*$)/gim, '<li class="mb-1 ml-4">$1</li>');
+            md = md.replace(/((<li.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+
+            // Paragraphs
+            md = md.replace(/\n\n/g, '</p><p class="mb-4">');
+            md = '<p class="mb-4">' + md + '</p>';
+            md = md.replace(/<p class="mb-4">\s*<\/p>/g, ''); // Remove empty paragraphs
+            md = md.replace(/<\/ul><\/p>/g, '</ul>');
+            md = md.replace(/<p class="mb-4"><h/g, '<h');
+            md = md.replace(/<\/h3><\/p>/g, '</h3>');
+
+
+            return md;
+        }
+
+
+        function displaySuggestions(suggestionsText) {
+            suggestionsDiv.innerHTML = basicMarkdownToHtml(suggestionsText);
+        }
+
+    </script>
+</body>
+</html>
